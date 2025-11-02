@@ -4,7 +4,7 @@ set -euo pipefail
 pesde x ewdev/multitarget -- build --yes \
     --build-files src tests --output dist_test \
     --global RUNTIME --require-mode luau \
-    --luau # Runtimes to run tests on
+    --lune # Runtimes to run tests on
 
 cd dist_test
 

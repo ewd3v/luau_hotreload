@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+lune setup
+
 selene \
     --no-summary \
     src tests
