@@ -15,7 +15,7 @@ type Settings = VM.Settings
 local Graft = {} :: impl
 Graft.__index = Graft
 
-type self = {
+export type proto = {
 	Source: string,
 	Interface: Interface,
 	Module: Module?,
@@ -26,17 +26,17 @@ type self = {
 
 	Settings: Settings,
 }
-type impl = {
+export type impl = {
 	__index: impl,
 
-	new: (interface: Interface) -> Graft,
+	new: (interface: Interface, source: string?) -> Graft,
 
 	IsGrafted: () -> boolean,
 	Patch: (self: Graft) -> (),
 	Run: (self: Graft, ...any) -> ...any,
 }
 
-export type Graft = typeof(setmetatable({} :: self, Graft))
+export type Graft = typeof(setmetatable({} :: proto, Graft))
 
 local function getDefaultSettings(): Settings
 	local settings = VM.luau_newsettings()
