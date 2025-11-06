@@ -1,5 +1,5 @@
 name = "ewdev/graft"
-version = "0.1.0"
+version = "0.1.1"
 description = "Hot reloading for Luau"
 authors = ["EwDev (https://ewdev.net/)"]
 repository = "https://github.com/ewd3v/luau_graft"
