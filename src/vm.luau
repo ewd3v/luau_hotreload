@@ -2,7 +2,7 @@
 
 --[=[
 	@class VM
-	@external Fiu https://github.com/rce-incorporated/Fiu/blob/main/Source.lua
+	@external Fiu https://github.com/rce-incorporated/Fiu
 
 	[Fiu] VM
 ]=]

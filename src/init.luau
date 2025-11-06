@@ -7,13 +7,13 @@ type Module = VM.Module
 type Settings = VM.Settings
 
 --[=[
-	@class HotReload
+	@class Graft
 
-	An object used to hold information relevant to hot reloading a certain Luau module / file / script.
+	An object used to hold information relevant for hot reloading a certain Luau module / file / script.
 ]=]
 
-local HotReload = {} :: impl
-HotReload.__index = HotReload
+local Graft = {} :: impl
+Graft.__index = Graft
 
 type self = {
 	Source: string,
@@ -21,7 +21,7 @@ type self = {
 	Module: Module?,
 
 	_waitingForModule: { thread },
-	_reloadThread: thread?,
+	_patchThread: thread?,
 	_main: ((...any) -> ...any)?,
 
 	Settings: Settings,
@@ -29,22 +29,22 @@ type self = {
 type impl = {
 	__index: impl,
 
-	new: (interface: Interface) -> HotReload,
+	new: (interface: Interface) -> Graft,
 
-	IsHotReloaded: () -> boolean,
-	Reload: (self: HotReload) -> (),
-	Run: (self: HotReload, ...any) -> ...any,
+	IsGrafted: () -> boolean,
+	Patch: (self: Graft) -> (),
+	Run: (self: Graft, ...any) -> ...any,
 }
 
-export type HotReload = typeof(setmetatable({} :: self, HotReload))
+export type Graft = typeof(setmetatable({} :: self, Graft))
 
 local function getDefaultSettings(): Settings
 	local settings = VM.luau_newsettings()
 
-	local isHotReloaded = HotReload.IsHotReloaded
+	local isGrafted = Graft.IsGrafted
 	settings.callHooks = {
 		callHook = function(func, ...)
-			if func ~= isHotReloaded then
+			if func ~= isGrafted then
 				return func, ...
 			end
 
@@ -58,13 +58,13 @@ local function getDefaultSettings(): Settings
 end
 
 --[=[
-	Creates a new [HotReload] object with the provided [Interface].
+	Creates a new [Graft] object with the provided [Interface].
 ]=]
-function HotReload.new(interface: Interface, source: string?): HotReload
-	local self = setmetatable({}, HotReload)
+function Graft.new(interface: Interface, source: string?): Graft
+	local self = setmetatable({}, Graft)
 
 	--[=[
-		@within HotReload
+		@within Graft
 		@prop Source string
 
 		The name / source of the Luau module thats being hot reloaded by this object.
@@ -72,39 +72,39 @@ function HotReload.new(interface: Interface, source: string?): HotReload
 	self.Source = source or debug.info(2, "s")
 
 	--[=[
-		@within HotReload
+		@within Graft
 		@prop Interface Interface
 
-		A reference to the [Interface] used to create this HotReload object.
+		A reference to the [Interface] used to create this Graft object.
 	]=]
 	self.Interface = interface
 
 	--[=[
-		@within HotReload
+		@within Graft
 		@prop Module Module
 	]=]
 	self.Module = nil
 
 	--[=[
-		@within HotReload
+		@within Graft
 		@prop _waitingForBytecode { thread }
 		@private
 
-		A list of threads that are currently yielding and that should be resumed when [HotReload.Module] is available.
+		A list of threads that are currently yielding and that should be resumed when [Graft.Module] is available.
 	]=]
 	self._waitingForModule = {}
 
 	--[=[
-		@within HotReload
-		@prop _reloadThread thread
+		@within Graft
+		@prop _patchThread thread
 		@private
 
-		The thread that's currently fetching the updated code and reloading the code.
+		The thread that's currently fetching the updated code and patching the code.
 	]=]
-	self._reloadThread = nil
+	self._patchThread = nil
 
 	--[=[
-		@within HotReload
+		@within Graft
 		@prop _main ((...any) -> ...any)?
 		@private
 
@@ -113,35 +113,35 @@ function HotReload.new(interface: Interface, source: string?): HotReload
 	self._main = nil
 
 	--[=[
-		@within HotReload
+		@within Graft
 		@prop Settings Settings
 
 		The [Fiu] settings that should be used.
 	]=]
 	self.Settings = getDefaultSettings()
 
-	self:Reload()
+	self:Patch()
 	return self
 end
 
 --[=[
-	Returns true if the current environment is being hot reloaded.
-	If it is you shouldn't really try hot loading it again.
+	Returns true if the current environment can be hot reloaded with [Graft].
+	If it is you shouldn't try hot loading it again.
 ]=]
-function HotReload.IsHotReloaded(): boolean
+function Graft.IsGrafted(): boolean
 	return false
 end
 
-local function reload(self: HotReload)
+local function patch(self: Graft)
 	local bytecodeSuccess, bytecode = pcall(self.Interface.GetBytecode)
 	if not bytecodeSuccess then
-		print(`[HotReload] Failed to retrieve bytecode for {self.Source}: {bytecode}`)
+		print(`[Graft] Failed to retrieve bytecode for {self.Source}: {bytecode}`)
 		return
 	end
 
 	local deserializeSuccess, deserialized = pcall(VM.luau_deserialize, bytecode :: any, self.Settings)
 	if not deserializeSuccess then
-		print(`[HotReload] Failed to deserialize bytecode for {self.Source}: {deserialized}`)
+		print(`[Graft] Failed to deserialize bytecode for {self.Source}: {deserialized}`)
 	end
 
 	local module = self.Module
@@ -157,7 +157,7 @@ local function reload(self: HotReload)
 	end
 
 	local functionChangeError =
-		`[HotReload] Changing the amount of functions or rearranging them is not yet supported. Not hot reloading. (source: {self.Source})`
+		`[Graft] Changing the amount of functions or rearranging them is not yet supported. Not patching. (source: {self.Source})`
 
 	if #module.protoList ~= #deserialized.protoList then
 		print(functionChangeError)
@@ -168,7 +168,7 @@ local function reload(self: HotReload)
 		local dProto = deserialized.protoList[index]
 		if proto.nups ~= dProto.nups then
 			print(
-				`[HotReload] Changing the amount of upvalues that a function has is not yet supported. Not hot reloading. (line: {dProto.linedefined}, function name: {dProto.debugname}, source: {self.Source})`
+				`[Graft] Changing the amount of upvalues that a function has is not yet supported. Not patching. (line: {dProto.linedefined}, function name: {dProto.debugname}, source: {self.Source})`
 			)
 			return
 		end
@@ -184,7 +184,7 @@ local function reload(self: HotReload)
 		end
 	end
 
-	print(`[HotReload] Hot reloading {self.Source}`)
+	print(`[Graft] Patching {self.Source}`)
 
 	module.stringList = deserialized.stringList
 	module.typesVersion = deserialized.typesVersion
@@ -214,21 +214,21 @@ end
 --[=[
 	Asks the [Interface] for the updated source code and then hot reloads the code.
 ]=]
-function HotReload:Reload()
-	if self._reloadThread then
-		coroutine.close(self._reloadThread)
+function Graft:Patch()
+	if self._patchThread then
+		coroutine.close(self._patchThread)
 	end
 
-	self._reloadThread = coroutine.create(reload)
-	coroutine.resume(self._reloadThread :: any, self)
+	self._patchThread = coroutine.create(patch)
+	coroutine.resume(self._patchThread :: any, self)
 end
 
 --[=[
-	Runs the luau module.
+	Runs the Luau module.
 
 	@yields
 ]=]
-function HotReload:Run(...: any): ...any
+function Graft:Run(...: any): ...any
 	local module = self.Module
 	if not module then
 		table.insert(self._waitingForModule, coroutine.running())
@@ -242,4 +242,4 @@ function HotReload:Run(...: any): ...any
 	return (self._main :: any)(...)
 end
 
-return HotReload
+return Graft

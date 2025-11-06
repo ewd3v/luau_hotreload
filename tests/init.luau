@@ -6,11 +6,11 @@ end
 local luau = require("@lune/luau")
 local task = require("@lune/task")
 
-local HotReload = require("./src")
+local Graft = require("./src")
 
 local sourcecode = [[
 local task = require("@lune/task")
-local HotReload, a, b = ...
+local Graft, a, b = ...
 local ret = { a, b }
 local function test()
 	table.insert(ret, "hi!")
@@ -18,12 +18,12 @@ end
 test()
 task.wait(1)
 test()
-return HotReload.IsHotReloaded(), ret
+return Graft.IsGrafted(), ret
 ]]
 
 local sourcecode2 = [[
 local task = require("@lune/task")
-local HotReload, a, b = ...
+local Graft, a, b = ...
 local ret = { a, b }
 local function test()
 	table.insert(ret, "goodbye!")
@@ -32,10 +32,10 @@ end
 test()
 task.wait(1)
 test()
-return HotReload.IsHotReloaded(), ret
+return Graft.IsGrafted(), ret
 ]]
 
-local hotReload = HotReload.new({
+local graft = Graft.new({
 	GetBytecode = function(): buffer
 		print("compiling bytecode...")
 		return buffer.fromstring(luau.compile(sourcecode))
@@ -44,12 +44,12 @@ local hotReload = HotReload.new({
 
 task.defer(function()
 	sourcecode = sourcecode2
-	hotReload:Reload()
+	graft:Patch()
 end)
 
-local isHotReloaded, ret = hotReload:Run(HotReload, "test1", "test2")
-assert(isHotReloaded == true, ".IsHotReloaded() should return true in hot reloaded environments")
-assert(HotReload.IsHotReloaded() == false, ".IsHotReloaded() should return false outside hot reloaded environments")
+local isGrafted, ret = graft:Run(Graft, "test1", "test2")
+assert(isGrafted == true, ".IsGrafted() should return true in hot reloaded environments")
+assert(graft.IsGrafted() == false, ".IsGrafted() should return false outside hot reloaded environments")
 
 assert(#ret == 5, "bad return amount")
 assert(ret[1] == "test1", "bad return")

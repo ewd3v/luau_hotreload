@@ -1,8 +1,8 @@
-name = "ewdev/hotreload"
+name = "ewdev/graft"
 version = "0.0.0"
-description = "Hot reloading for luau"
+description = "Hot reloading for Luau"
 authors = ["EwDev (https://ewdev.net/)"]
-repository = "https://github.com/ewd3v/luau_hotreload"
+repository = "https://github.com/ewd3v/luau_graft"
 license = "MIT"
 includes = ["src/**", "pesde.toml", "LICENSE", "README.md", "fiu/Source.lua"]
 
