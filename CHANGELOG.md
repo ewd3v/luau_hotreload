@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.2] - 2025-11-12
 
-## [0.1.2] - 2025-11-12
-
 ### Fixed
 
 - Fiu is now included as a build file on Roblox targets (should fix issue with it not syncing in)
@@ -30,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 [unreleased]: https://github.com/ewd3v/luau_graft/compare/v0.1.2...HEAD
-[0.1.2]: https://github.com/ewd3v/luau_graft/compare/v0.1.2...v0.1.2
 [0.1.2]: https://github.com/ewd3v/luau_graft/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ewd3v/luau_graft/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ewd3v/luau_graft/compare/788bbe1f83576f7f9edc294f9f9b63d9d2583070...v0.1.0
