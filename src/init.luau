@@ -139,6 +139,10 @@ local function patch(self: Graft)
 		return
 	end
 
+	if bytecode == nil then
+		return
+	end
+
 	local deserializeSuccess, deserialized = pcall(VM.luau_deserialize, bytecode :: any, self.Settings)
 	if not deserializeSuccess then
 		print(`[Graft] Failed to deserialize bytecode for {self.Source}: {deserialized}`)
